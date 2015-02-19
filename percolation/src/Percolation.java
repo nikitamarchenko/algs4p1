@@ -19,10 +19,10 @@ public class Percolation {
         n = N;
         open = new boolean[(N * N) + 1 + N];
         open[getTop()] = true;
-        for (int i = 1; i <= N; i++)
-        {
-            open[getBottom(i)] = true;
-        }
+//        for (int i = 1; i <= N; i++)
+//        {
+//            open[getBottom(i)] = true;
+//        }
 
         qu = new WeightedQuickUnionUF((N * N) + 1 + N);
     }
@@ -54,19 +54,13 @@ public class Percolation {
         return n * n + 1 + jj;
     }
 
-    private boolean connected(int p, int q)
-    {
-        return qu.connected(p, q);
-    }
-
-    private void union(int p, int q)
-    {
-        qu.union(p, q);
-    }
-
     public void open(int i, int j)
     {
         int cell = getOffset(i, j);
+
+        if (open[cell])
+            return;
+
         open[cell] = true;
 
         int[][] shift = {{+1, 0}, {-1, 0}, {0, +1}, {0, -1}};
@@ -77,7 +71,7 @@ public class Percolation {
           {
               if (isOpen(i + x[0], j + x[1]))
               {
-                  union(cell, getOffset(i + x[0], j + x[1]));
+                  qu.union(cell, getOffset(i + x[0], j + x[1]));
               }
           }
           catch (IndexOutOfBoundsException ex)
@@ -88,11 +82,13 @@ public class Percolation {
 
         if (i == 1)
         {
-            union(getTop(), cell);
+            qu.union(getTop(), cell);
         }
         if (i == n)
         {
-            union(getBottom(j), cell);
+            int offset = getBottom(j);
+            qu.union(offset, cell);
+            open[offset] = true;
         }
     }
 
@@ -104,7 +100,10 @@ public class Percolation {
 
     public boolean isFull(int i, int j)
     {
-        return connected(getTop(), getOffset(i, j));
+        if (!isOpen(i, j))
+            return false;
+
+        return qu.connected(getTop(), getOffset(i, j));
     }
 
     public boolean percolates()
@@ -116,7 +115,9 @@ public class Percolation {
 
         for (int i = 1; i <= n; i++)
         {
-            if (connected(getTop(), getBottom(i)))
+            int offset = getBottom(i);
+
+            if (open[offset] && qu.connected(getTop(), offset))
             {
                 isPercolates = true;
                 return true;
