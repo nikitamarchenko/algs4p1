@@ -2,13 +2,14 @@
  * Created by tpuctah on 15.02.15.
  */
 
+
+
 public class Percolation {
 
     private int n;
     private boolean[] open;
-    private int[] id;
     private boolean isPercolates;
-
+    private WeightedQuickUnionUF qu;
 
     public Percolation(int N)
     {
@@ -23,12 +24,7 @@ public class Percolation {
             open[getBottom(i)] = true;
         }
 
-        id = new int[N * N + 1 + N];
-
-        for (int i = 0; i < id.length; i++)
-        {
-            id[i] = i;
-        }
+        qu = new WeightedQuickUnionUF((N * N) + 1 + N);
     }
 
     private int transformCoords(int x)
@@ -60,16 +56,12 @@ public class Percolation {
 
     private boolean connected(int p, int q)
     {
-        return id[p] == id[q];
+        return qu.connected(p, q);
     }
 
     private void union(int p, int q)
     {
-        int pid = id[p];
-        int qid = id[q];
-        for (int i = 0; i < id.length; i++)
-            if (id[i] == pid)
-                id[i] = qid;
+        qu.union(p, q);
     }
 
     public void open(int i, int j)
