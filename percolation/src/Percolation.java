@@ -8,6 +8,7 @@ public class Percolation {
 
     private int n;
     private boolean[] open;
+    private boolean[] full;
     private boolean isPercolates;
     private WeightedQuickUnionUF qu;
 
@@ -17,14 +18,11 @@ public class Percolation {
             throw new IllegalArgumentException();
 
         n = N;
-        open = new boolean[(N * N) + 1 + N];
+        open = new boolean[(N * N) + 1 + N + 1];
         open[getTop()] = true;
-//        for (int i = 1; i <= N; i++)
-//        {
-//            open[getBottom(i)] = true;
-//        }
-
-        qu = new WeightedQuickUnionUF((N * N) + 1 + N);
+        open[getBottom()] = true;
+        full = new boolean[(N * N)];
+        qu = new WeightedQuickUnionUF((N * N) + 1 + 1);
     }
 
     private int transformCoords(int x)
@@ -48,10 +46,43 @@ public class Percolation {
         return n * n;
     }
 
-    private int getBottom(int j)
+    private int getBottom()
     {
-        int jj = transformCoords(j);
-        return n * n + 1 + jj;
+        return n * n + 1;
+    }
+
+    private void reqursiveFull(int i, int j)
+    {
+        int cell = getOffset(i, j);
+        int[][] shift = {{+1, 0}, {-1, 0}, {0, +1}, {0, -1}};
+
+        if (!full[cell]) {
+            for (int[] x : shift) {
+                try {
+                    int nextCell = getOffset(i + x[0], j + x[1]);
+                    if (open[nextCell] && full[nextCell]) {
+                        full[cell] = true;
+                        break;
+                    }
+                } catch (IndexOutOfBoundsException ex) {
+                    continue;
+                }
+            }
+        }
+
+        if (full[cell])
+        {
+            for (int[] x : shift) {
+                try {
+                    int nextCell = getOffset(i + x[0], j + x[1]);
+                    if (open[nextCell] && !full[nextCell]) {
+                        reqursiveFull(i + x[0], j + x[1]);
+                    }
+                } catch (IndexOutOfBoundsException ex) {
+                    continue;
+                }
+            }
+        }
     }
 
     public void open(int i, int j)
@@ -62,6 +93,16 @@ public class Percolation {
             return;
 
         open[cell] = true;
+
+        if (i == 1)
+        {
+            qu.union(getTop(), cell);
+            full[cell] = true;
+        }
+        if (i == n)
+        {
+            qu.union(getBottom(), cell);
+        }
 
         int[][] shift = {{+1, 0}, {-1, 0}, {0, +1}, {0, -1}};
 
@@ -80,16 +121,7 @@ public class Percolation {
           }
         }
 
-        if (i == 1)
-        {
-            qu.union(getTop(), cell);
-        }
-        if (i == n)
-        {
-            int offset = getBottom(j);
-            qu.union(offset, cell);
-            open[offset] = true;
-        }
+        reqursiveFull(i, j);
     }
 
     public boolean isOpen(int i, int j)
@@ -100,10 +132,11 @@ public class Percolation {
 
     public boolean isFull(int i, int j)
     {
-        if (!isOpen(i, j))
+        int cell = getOffset(i, j);
+        if (!open[cell])
             return false;
 
-        return qu.connected(getTop(), getOffset(i, j));
+        return full[cell];
     }
 
     public boolean percolates()
@@ -113,16 +146,12 @@ public class Percolation {
             return true;
         }
 
-        for (int i = 1; i <= n; i++)
+        if (qu.connected(getTop(), getBottom()))
         {
-            int offset = getBottom(i);
-
-            if (open[offset] && qu.connected(getTop(), offset))
-            {
-                isPercolates = true;
-                return true;
-            }
+            isPercolates = true;
+            return true;
         }
+
         return false;
     }
 }
